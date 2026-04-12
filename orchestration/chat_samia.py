@@ -73,27 +73,39 @@ def conversar_com_llm(historico_mensagens):
         print("Retorno Bruto:", conteudo_json)
         return None
 
+ACTION_SCRIPT_MAP = {
+    "REGISTRAR_DESPESA":   "registrar_despesa.py",
+    "REGISTRAR_RECEITA":   "registrar_receita.py",
+    "CADASTRAR_CARTAO":    "cadastrar_cartao.py",
+    "CADASTRAR_CATEGORIA": "cadastrar_categoria.py",
+    "LISTAR_TRANSACOES":   "listar_transacoes.py",
+    "LISTAR_CARTOES":      "listar_cartoes.py",
+    "RESUMO_FINANCEIRO":   "resumo_financeiro.py",
+    "BUSCAR_TRANSACAO":    "buscar_transacao.py",
+    "EDITAR_TRANSACAO":    "editar_transacao.py",
+    "DELETAR_TRANSACAO":   "deletar_transacao.py",
+    "DESATIVAR_CARTAO":    "desativar_cartao.py",
+    "CONFIRMAR_TRANSACAO": "confirmar_transacao.py",
+}
+
+
 def executar_tarefa(acao, payload):
     """Encaminha o payload recebido do LLM para o script python adequado."""
-    if acao == "DISPATCH_TASK" and payload:
-        print("\n⏳ [Sistema] Registrando dados no Supabase...")
-        try:
-            # Transforma o payload (dict) em string pra passar como argumento de CLI
-            payload_str = json.dumps(payload, ensure_ascii=False)
-            
-            # Chama o registrar_despesa.py
-            resultado = subprocess.run(
-                ["py", "-3.13", "execution/registrar_despesa.py", payload_str],
-                capture_output=True,
-                text=True,
-            )
-            
-            # Retorna o stdout do script (que deve ser o JSON de sucesso/erro)
-            return resultado.stdout.strip()
-        except Exception as e:
-            return json.dumps({"success": False, "error": f"Falha na execução: {str(e)}"})
-    
-    return json.dumps({"success": False, "error": f"Ação desconhecida ou payload vazio: {acao}"})
+    if acao not in ACTION_SCRIPT_MAP:
+        return json.dumps({"success": False, "error": f"Ação desconhecida: {acao}"})
+
+    script_alvo = ACTION_SCRIPT_MAP[acao]
+    print(f"\n⏳ [Sistema] Executando {script_alvo}...")
+    try:
+        payload_str = json.dumps(payload, ensure_ascii=False)
+        resultado = subprocess.run(
+            ["py", "-3.13", f"execution/{script_alvo}", payload_str],
+            capture_output=True,
+            text=True,
+        )
+        return resultado.stdout.strip()
+    except Exception as e:
+        return json.dumps({"success": False, "error": f"Falha na execução: {str(e)}"})
 
 def chat():
     print("Iniciando Sistema Sam-IA...\n")
@@ -132,17 +144,17 @@ def chat():
             mensagens.append({"role": "assistant", "content": json.dumps(acs_data, ensure_ascii=False)})
 
             # Trata ações de execução determinística
-            if next_action == "DISPATCH_TASK":
+            if next_action in ACTION_SCRIPT_MAP:
                 resultado_script = executar_tarefa(next_action, payload)
                 print(f"🔧 [Output do Sistema]: {resultado_script}\n")
-                
-                # Injetamos o resultado como uma mensagem "system" invisível pro user, informando o LLM
+
+                # Injeta o resultado como mensagem "system" invisível ao usuário
                 mensagens.append({
-                    "role": "system", 
-                    "content": f"O script the execução retornou isso (task_result): {resultado_script}. Informe o resultado final ao usuário."
+                    "role": "system",
+                    "content": f"O script de execução retornou isso (task_result): {resultado_script}. Informe o resultado final ao usuário de forma natural (NUNCA cite logs ou UUIDs)."
                 })
-                
-                # Pedimos pro LLM gerar a resposta final com base no resultado e confirmar com a persona
+
+                # Segundo turno: LLM gera resposta final com base no resultado
                 print("⏳ Sam-IA está confirmando com o sistema...")
                 confirmacao_acs = conversar_com_llm(mensagens)
                 if confirmacao_acs:

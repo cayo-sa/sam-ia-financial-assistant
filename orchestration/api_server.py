@@ -203,14 +203,24 @@ async def webhook_n8n(request: N8nWebhookRequest, x_webhook_secret: str = Header
 
     final_bot_msg = bot_msg
 
-    # 4. Tratar Roteamento Determinístico (Ex: Registrar Tudo)
-    if (next_action in ["DISPATCH_TASK", "CADASTRAR_CARTAO", "CADASTRAR_CATEGORIA"]) and payload:
-        script_alvo = "registrar_despesa.py"
-        
-        if next_action == "CADASTRAR_CARTAO":
-            script_alvo = "cadastrar_cartao.py"
-        elif next_action == "CADASTRAR_CATEGORIA":
-            script_alvo = "cadastrar_categoria.py"
+    # 4. Tratar Roteamento Determinístico
+    ACTION_SCRIPT_MAP = {
+        "REGISTRAR_DESPESA":   "registrar_despesa.py",
+        "REGISTRAR_RECEITA":   "registrar_receita.py",
+        "CADASTRAR_CARTAO":    "cadastrar_cartao.py",
+        "CADASTRAR_CATEGORIA": "cadastrar_categoria.py",
+        "LISTAR_TRANSACOES":   "listar_transacoes.py",
+        "LISTAR_CARTOES":      "listar_cartoes.py",
+        "RESUMO_FINANCEIRO":   "resumo_financeiro.py",
+        "BUSCAR_TRANSACAO":    "buscar_transacao.py",
+        "EDITAR_TRANSACAO":    "editar_transacao.py",
+        "DELETAR_TRANSACAO":   "deletar_transacao.py",
+        "DESATIVAR_CARTAO":    "desativar_cartao.py",
+        "CONFIRMAR_TRANSACAO": "confirmar_transacao.py",
+    }
+
+    if next_action in ACTION_SCRIPT_MAP:
+        script_alvo = ACTION_SCRIPT_MAP[next_action]
 
         # Chama a Tool para aquele user_id específico
         resultado_script = executar_script(script_alvo, payload, user_id)
