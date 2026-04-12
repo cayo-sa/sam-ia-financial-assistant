@@ -39,12 +39,15 @@ def resumo_financeiro(filtros: dict = None) -> dict:
 
     periodo_dias = int(filtros.get("periodo_dias", 30))
     data_inicio = (date.today() - timedelta(days=periodo_dias)).isoformat()
+    data_fim = date.today().isoformat()
 
     resp = (
         client.table("transactions")
         .select("amount, type, category")
         .eq("user_id", USER_ID)
         .gte("date", data_inicio)
+        .lte("date", data_fim)
+        .neq("status", "cancelado")
         .execute()
     )
 

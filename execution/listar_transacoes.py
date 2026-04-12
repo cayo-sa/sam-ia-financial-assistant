@@ -12,8 +12,15 @@ Filtros opcionais (JSON):
         "limite": 10,
         "tipo": "expense | income",
         "categoria": "string",
-        "periodo_dias": 30
+        "periodo_dias": 30,
+        "ordenar_por": "date | created_at"
     }
+
+Notas:
+    - ordenar_por="date" (padrão): ordena por data da transação, filtra pelo período e exclui datas futuras.
+    - ordenar_por="created_at": ordena por data de cadastro no sistema, sem filtro de período
+      (útil para "últimas N receitas/despesas" sem período específico).
+    - Transações com status "cancelado" são sempre excluídas.
 
 Saída (stdout): JSON com lista de transações
     Sucesso: {"success": true, "total": N, "transacoes": [...]}
@@ -46,18 +53,32 @@ def listar_transacoes(filtros: dict = None) -> dict:
     limite = int(filtros.get("limite", 10))
     tipo = filtros.get("tipo")
     categoria = filtros.get("categoria")
-    periodo_dias = int(filtros.get("periodo_dias", 30))
-
-    data_inicio = (date.today() - timedelta(days=periodo_dias)).isoformat()
+    ordenar_por = filtros.get("ordenar_por", "date")
 
     query = (
         client.table("transactions")
-        .select("id, title, amount, type, category, payment_method, date, status, recurrence_type")
+        .select("id, title, amount, type, category, payment_method, date, status, recurrence_type, created_at")
         .eq("user_id", USER_ID)
-        .gte("date", data_inicio)
-        .order("date", desc=True)
-        .limit(limite)
+        .neq("status", "cancelado")
     )
+
+    if ordenar_por == "created_at":
+        # Sem filtro de período — mostra os mais recentemente cadastrados
+        query = query.order("created_at", desc=True)
+        periodo_dias = None
+    else:
+        # Filtra pelo período e exclui datas futuras
+        periodo_dias = int(filtros.get("periodo_dias", 30))
+        data_inicio = (date.today() - timedelta(days=periodo_dias)).isoformat()
+        data_fim = date.today().isoformat()
+        query = (
+            query
+            .gte("date", data_inicio)
+            .lte("date", data_fim)
+            .order("date", desc=True)
+        )
+
+    query = query.limit(limite)
 
     if tipo:
         query = query.eq("type", tipo)
@@ -66,12 +87,14 @@ def listar_transacoes(filtros: dict = None) -> dict:
 
     resp = query.execute()
 
-    return {
+    result = {
         "success": True,
         "total": len(resp.data),
-        "periodo_dias": periodo_dias,
-        "transacoes": resp.data
+        "transacoes": resp.data,
     }
+    if periodo_dias is not None:
+        result["periodo_dias"] = periodo_dias
+    return result
 
 
 if __name__ == "__main__":
