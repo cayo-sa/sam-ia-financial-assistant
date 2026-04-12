@@ -1,0 +1,13 @@
+# Ambiente
+.env
+.tmp/
+
+# Credenciais
+credentials.json
+token.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
