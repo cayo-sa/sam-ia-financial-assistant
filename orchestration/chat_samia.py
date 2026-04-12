@@ -29,12 +29,11 @@ def ler_arquivo_texto(caminho):
         exit(1)
 
 def montar_system_prompt():
-    """Junta as regras da Sam-IA com o contexto dinâmico do banco (categorias e cartões)."""
-    # 1. Lê o prompt master
+    """Junta personalidade, módulo de empatia, regras de execução e contexto dinâmico do banco."""
+    personality = ler_arquivo_texto("directives/samia_personality.md")
+    empathy = ler_arquivo_texto("directives/samia_empathy_module.md")
     prompt_base = ler_arquivo_texto("directives/samia_system_prompt.md")
 
-    # 2. Executa o buscar_contexto.py para obter dados do usuário 
-    # Usamos o Python do próprio ambiente atual
     try:
         resultado = subprocess.run(
             ["py", "-3.13", "execution/buscar_contexto.py"],
@@ -47,7 +46,7 @@ def montar_system_prompt():
         print("ERRO ao buscar contexto financeiro:")
         print(e.stderr)
         exit(1)
-    
+
     contexto_str = f"""
 \n--- CONTEXTO ATUALIZADO DO USUÁRIO ---
 Aqui estão as categorias e cartões de crédito ATIVOS do usuário no banco de dados.
@@ -55,7 +54,7 @@ Sempre utilize ESSAS opções como referência.
 Contexto do Usuário:
 {contexto_json}
 """
-    return prompt_base + contexto_str
+    return personality + "\n\n---\n\n" + empathy + "\n\n---\n\n" + prompt_base + contexto_str
 
 def conversar_com_llm(historico_mensagens):
     """Envia o histórico para a OpenAI e retorna o JSON estruturado ACS."""

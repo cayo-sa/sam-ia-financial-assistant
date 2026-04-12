@@ -81,9 +81,11 @@ def buscar_contexto_usuario(user_id: str) -> str:
         return "{}"
 
 def montar_system_prompt_dinamico(user_id: str) -> str:
+    personality = ler_arquivo_texto("directives/samia_personality.md")
+    empathy = ler_arquivo_texto("directives/samia_empathy_module.md")
     prompt_base = ler_arquivo_texto("directives/samia_system_prompt.md")
     contexto_json = buscar_contexto_usuario(user_id)
-    
+
     contexto_str = f"""
 \n--- CONTEXTO ATUALIZADO DO USUÁRIO ---
 Aqui estão as categorias e cartões de crédito ATIVOS do usuário no banco de dados.
@@ -91,7 +93,7 @@ Sempre utilize ESSAS opções como referência.
 Contexto do Usuário:
 {contexto_json}
 """
-    return prompt_base + contexto_str
+    return personality + "\n\n---\n\n" + empathy + "\n\n---\n\n" + prompt_base + contexto_str
 
 def conversar_com_llm(historico_mensagens: list):
     """Envia o histórico para a OpenAI e retorna o JSON estruturado ACS."""
