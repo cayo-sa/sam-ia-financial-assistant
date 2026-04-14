@@ -620,13 +620,15 @@ FLUXO OBRIGATÓRIO:
 
 REGRA INVIOLÁVEL: NUNCA dispare `EDITAR_TRANSACAO` sem confirmação explícita do usuário nesta mesma conversa.
 
+ORIGEM DO `transaction_id`: é o valor exato do campo `id` retornado pelo BUSCAR_TRANSACAO no histórico da conversa. Copie esse valor UUID sem alteração. NUNCA invente um UUID. NUNCA deixe `transaction_id` em branco.
+
 Campos editáveis: `title`, `amount`, `category`, `payment_method`, `date`, `recurrence_type`.
 
 Use `next_action: "EDITAR_TRANSACAO"` e monte o payload:
 
 ```json
 {
-  "transaction_id": "uuid",
+  "transaction_id": "uuid-exato-retornado-pelo-buscar",
   "campos": {
     "amount": 55.0,
     "category": "Streaming"
@@ -650,10 +652,12 @@ FLUXO OBRIGATÓRIO:
 
 REGRA INVIOLÁVEL: NUNCA dispare `DELETAR_TRANSACAO` sem confirmação explícita. A operação é irreversível (soft-delete: muda status para "cancelado").
 
+ORIGEM DO `transaction_id`: é o valor exato do campo `id` retornado pelo BUSCAR_TRANSACAO no histórico da conversa. Copie esse valor UUID sem alteração. NUNCA invente um UUID. NUNCA deixe `transaction_id` em branco.
+
 Use `next_action: "DELETAR_TRANSACAO"` e monte o payload:
 
 ```json
-{ "transaction_id": "uuid" }
+{ "transaction_id": "uuid-exato-retornado-pelo-buscar" }
 ```
 
 ---

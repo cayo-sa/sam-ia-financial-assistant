@@ -226,10 +226,23 @@ async def webhook_n8n(request: N8nWebhookRequest, x_webhook_secret: str = Header
         resultado_script = executar_script(script_alvo, payload, user_id)
         
         # Injeta resultado no contexto
-        mensagens.append({
-            "role": "system", 
-            "content": f"O script {script_alvo} retornou isso internamente ao sistema: {resultado_script}. Com base nisso, elabore a resposta final em estilo natural confirmando pro usuário TUDO o que foi salvo ou relatando o que deu errado (NUNCA cite logs feios)."
-        })
+        if next_action == "BUSCAR_TRANSACAO":
+            injecao = (
+                f"Resultado do BUSCAR_TRANSACAO: {resultado_script}. "
+                "Apresente as transações encontradas ao usuário de forma legível, sem exibir UUIDs. "
+                "CRÍTICO: o campo `id` de cada transação é o valor que você DEVE usar exatamente "
+                "no campo `transaction_id` do payload quando o usuário confirmar a edição "
+                "(EDITAR_TRANSACAO) ou deleção (DELETAR_TRANSACAO). "
+                "Nunca invente um UUID — copie o valor exato do campo `id` retornado aqui."
+            )
+        else:
+            injecao = (
+                f"O script {script_alvo} retornou isso internamente ao sistema: {resultado_script}. "
+                "Com base nisso, elabore a resposta final em estilo natural confirmando pro usuário "
+                "TUDO o que foi salvo ou relatando o que deu errado. "
+                "Nunca exiba UUIDs ou logs técnicos ao usuário."
+            )
+        mensagens.append({"role": "system", "content": injecao})
         
         # Pede pra Sam-IA falar o veredito final (2º Turno)
         confirmacao_acs = conversar_com_llm(mensagens)

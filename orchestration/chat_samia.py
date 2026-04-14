@@ -149,10 +149,22 @@ def chat():
                 print(f"🔧 [Output do Sistema]: {resultado_script}\n")
 
                 # Injeta o resultado como mensagem "system" invisível ao usuário
-                mensagens.append({
-                    "role": "system",
-                    "content": f"O script de execução retornou isso (task_result): {resultado_script}. Informe o resultado final ao usuário de forma natural (NUNCA cite logs ou UUIDs)."
-                })
+                if next_action == "BUSCAR_TRANSACAO":
+                    injecao = (
+                        f"Resultado do BUSCAR_TRANSACAO: {resultado_script}. "
+                        "Apresente as transações encontradas ao usuário de forma legível, sem exibir UUIDs. "
+                        "CRÍTICO: o campo `id` de cada transação é o valor que você DEVE usar exatamente "
+                        "no campo `transaction_id` do payload quando o usuário confirmar a edição "
+                        "(EDITAR_TRANSACAO) ou deleção (DELETAR_TRANSACAO). "
+                        "Nunca invente um UUID — copie o valor exato do campo `id` retornado aqui."
+                    )
+                else:
+                    injecao = (
+                        f"O script de execução retornou isso (task_result): {resultado_script}. "
+                        "Informe o resultado final ao usuário de forma natural. "
+                        "Nunca exiba UUIDs ou logs técnicos ao usuário."
+                    )
+                mensagens.append({"role": "system", "content": injecao})
 
                 # Segundo turno: LLM gera resposta final com base no resultado
                 print("⏳ Sam-IA está confirmando com o sistema...")
