@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(py -3.13 -c \"import ast; files = ['orchestration/api_server.py','orchestration/chat_samia.py','execution/listar_cartoes.py','execution/resumo_financeiro.py','execution/buscar_transacao.py','execution/editar_transacao.py','execution/deletar_transacao.py','execution/desativar_cartao.py','execution/confirmar_transacao.py']; [print\\(f'OK: {f}'\\) or ast.parse\\(open\\(f\\).read\\(\\)\\) for f in files]; print\\('Todos OK'\\)\")",
-      "Bash(py -3.13 execution/listar_cartoes.py)",
-      "Bash(py -3.13 execution/resumo_financeiro.py \"{\\\\\"periodo_dias\\\\\": 30}\")"
-    ]
-  }
-}
